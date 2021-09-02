@@ -160,6 +160,8 @@ class Ticket(models.Model):
                              on_delete=models.CASCADE)
     expires = models.DateTimeField(_('expires'))
     consumed = models.DateTimeField(_('consumed'), null=True)
+    username = models.CharField(_('username'), max_length=255, blank=True)
+    login_ip = models.GenericIPAddressField(_('ip'), blank=True, null=True)
 
     objects = TicketManager()
 
