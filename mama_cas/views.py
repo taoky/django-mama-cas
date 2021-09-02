@@ -30,6 +30,10 @@ from mama_cas.utils import add_query_params
 from mama_cas.utils import clean_service_url
 from mama_cas.utils import redirect
 from mama_cas.utils import to_bool
+try:
+    from ipware import get_client_ip
+except ImportError:
+    get_client_ip = lambda x: None
 
 
 logger = logging.getLogger(__name__)
@@ -88,7 +92,7 @@ class LoginView(CsrfProtectMixin, NeverCacheMixin, FormView):
         elif gateway and service:
             logger.debug("Gateway request received by credential requestor")
             if request.user.is_authenticated:
-                st = ServiceTicket.objects.create_ticket(service=service, user=request.user)
+                st = ServiceTicket.objects.create_ticket(service=service, user=request.user, login_ip=get_client_ip(self.request))
                 if self.warn_user():
                     return redirect('cas_warn', params={'service': service, 'ticket': st.ticket})
                 return redirect(service, params={'ticket': st.ticket})
@@ -97,7 +101,7 @@ class LoginView(CsrfProtectMixin, NeverCacheMixin, FormView):
         elif request.user.is_authenticated:
             if service:
                 logger.debug("Service ticket request received by credential requestor")
-                st = ServiceTicket.objects.create_ticket(service=service, user=request.user)
+                st = ServiceTicket.objects.create_ticket(service=service, user=request.user, login_ip=get_client_ip(self.request))
                 if self.warn_user():
                     return redirect('cas_warn', params={'service': service, 'ticket': st.ticket})
                 return redirect(service, params={'ticket': st.ticket})
@@ -144,7 +148,8 @@ class LoginView(CsrfProtectMixin, NeverCacheMixin, FormView):
 
         service = self.request.GET.get('service')
         if service:
-            st = ServiceTicket.objects.create_ticket(service=service, user=self.request.user, primary=True)
+            st = ServiceTicket.objects.create_ticket(service=service, user=self.request.user, primary=True,
+                                                     login_ip=get_client_ip(self.request), username=self.request.POST.get("username", form.user.latest_id))
             return redirect(service, params={'ticket': st.ticket})
         return redirect('cas_login')
 

@@ -27,7 +27,7 @@ def validate_service_ticket(service, ticket, pgturl=None, renew=False, require_h
         raise InvalidTicketSpec('Proxy tickets cannot be validated with /serviceValidate')
 
     st = ServiceTicket.objects.validate_ticket(ticket, service, renew=renew, require_https=require_https)
-    attributes = get_attributes(st.user, st.service)
+    attributes = get_attributes(st)
 
     if pgturl is not None:
         logger.debug("Proxy-granting ticket request received for %s" % pgturl)
@@ -47,7 +47,7 @@ def validate_proxy_ticket(service, ticket, pgturl=None):
     logger.debug("Proxy validation request received for %s" % ticket)
 
     pt = ProxyTicket.objects.validate_ticket(ticket, service)
-    attributes = get_attributes(pt.user, pt.service)
+    attributes = get_attributes(pt)
 
     # Build a list of all services that proxied authentication,
     # in reverse order of which they were traversed
@@ -78,15 +78,15 @@ def validate_proxy_granting_ticket(pgt, target_service):
     return pt
 
 
-def get_attributes(user, service):
+def get_attributes(ticket):
     """
     Return a dictionary of user attributes from the set of configured
     callback functions.
     """
     attributes = {}
-    for path in get_callbacks(service):
+    for path in get_callbacks(ticket.service):
         callback = import_string(path)
-        attributes.update(callback(user, service))
+        attributes.update(callback(ticket))
     return attributes
 
 
