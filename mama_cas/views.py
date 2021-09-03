@@ -33,7 +33,7 @@ from mama_cas.utils import to_bool
 try:
     from ipware import get_client_ip
 except ImportError:
-    get_client_ip = lambda x: None
+    get_client_ip = lambda x: (None, None)
 
 
 logger = logging.getLogger(__name__)
@@ -92,8 +92,9 @@ class LoginView(CsrfProtectMixin, NeverCacheMixin, FormView):
         elif gateway and service:
             logger.debug("Gateway request received by credential requestor")
             if request.user.is_authenticated:
-                st = ServiceTicket.objects.create_ticket(service=service, user=request.user, 
-                                                         login_ip=get_client_ip(self.request)[0], username=self.request.session.get("username"))
+                st = ServiceTicket.objects.create_ticket(service=service, user=request.user,
+                                                         login_ip=get_client_ip(self.request)[0],
+                                                         username=self.request.session.get("username", ""))
                 if self.warn_user():
                     return redirect('cas_warn', params={'service': service, 'ticket': st.ticket})
                 return redirect(service, params={'ticket': st.ticket})
@@ -102,8 +103,9 @@ class LoginView(CsrfProtectMixin, NeverCacheMixin, FormView):
         elif request.user.is_authenticated:
             if service:
                 logger.debug("Service ticket request received by credential requestor")
-                st = ServiceTicket.objects.create_ticket(service=service, user=request.user, 
-                                                         login_ip=get_client_ip(self.request)[0], username=self.request.session.get("username"))
+                st = ServiceTicket.objects.create_ticket(service=service, user=request.user,
+                                                         login_ip=get_client_ip(self.request)[0],
+                                                         username=self.request.session.get("username", ""))
                 if self.warn_user():
                     return redirect('cas_warn', params={'service': service, 'ticket': st.ticket})
                 return redirect(service, params={'ticket': st.ticket})
