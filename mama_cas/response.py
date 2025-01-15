@@ -3,6 +3,7 @@ import datetime
 from django.http import HttpResponse
 from django.utils.crypto import get_random_string
 from django.utils.encoding import force_str
+from django.conf import settings
 
 from .compat import etree
 
@@ -66,7 +67,11 @@ class ValidationResponse(CasResponseBase):
             user = etree.SubElement(auth_success, self.ns('user'))
             user.text = ticket.username if ticket.username else ticket.user.get_username()
             if attributes:
-                attribute_set = etree.SubElement(auth_success, 'attributes')
+                use_nonstandard_attributes = getattr(settings, 'MAMA_CAS_USE_NONSTANDARD_ATTRIBUTES', False)
+                if use_nonstandard_attributes:
+                    attribute_set = etree.SubElement(auth_success, 'attributes')
+                else:
+                    attribute_set = etree.SubElement(auth_success, self.ns('attributes'))
                 for name, value in attributes.items():
                     if isinstance(value, list):
                         for v in value:
